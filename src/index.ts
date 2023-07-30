@@ -23,6 +23,9 @@ export const main = (args: string[]): void => {
 const runFile = (path: string) => {
     const fileData: Buffer = fs.readFileSync(path);
     run(fileData.toString('utf-8'));
+    if (hadError) {
+        process.exit(1);
+    }
 }
 
 const runPrompt = () => {
@@ -31,6 +34,7 @@ const runPrompt = () => {
     process.stdin.resume();
     process.stdin.on('data', (dataBuffer: Buffer) => {
         run(`${dataBuffer.toString()}`);
+        hadError = false;
         process.stdout.write('> ');
     })
     process.stdin.on('end', () => {
