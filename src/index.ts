@@ -59,5 +59,16 @@ const report = (line: number, where: string, message: string): void => {
     hadError = true;
 }
 
+export const Lox = {
+    main,
+    runFile,
+    runPrompt,
+    run,
+    error,
+    report
+}
+
+export default Lox;
+
 // Run
 main(process.argv);
