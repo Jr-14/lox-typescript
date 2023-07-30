@@ -1,5 +1,8 @@
 import process from 'node:process';
-import * as readline from 'node:readline';
+import fs from 'node:fs';
+
+// Track if there has been any errors
+let hadError: boolean = false;
 
 /**
  * Main entry point to our Lox TypeScript Programming Language implementation
@@ -18,34 +21,39 @@ export const main = (args: string[]): void => {
 }
 
 const runFile = (path: string) => {
-
-}
-
-const run = (source: string) => {
-    // const scannedTokens = scanner(source);
-    // const tokens: Token[] = scanner.ScanTokens();
+    const fileData: Buffer = fs.readFileSync(path);
+    run(fileData.toString('utf-8'));
 }
 
 const runPrompt = () => {
-    // const readable: Readable = new Readable;
-    // readable.on('data', (chunk) => {
-    //     console.log(`> ${chunk.toString()}`);
-    // });
-    // readable.on('error', (err: Error) => {
-    //     console.error(err);
-    // });
-    // readable.pipe(process.stdout);
     process.stdin.setEncoding('utf-8');
     process.stdout.write('> ');
     process.stdin.resume();
     process.stdin.on('data', (dataBuffer: Buffer) => {
-        process.stdout.write(`> ${dataBuffer.toString()}`);
+        run(`${dataBuffer.toString()}`);
         process.stdout.write('> ');
     })
     process.stdin.on('end', () => {
         console.log('end');
     })
 }   
+
+const run = (source: string) => {
+    // const scannedTokens = scanner(source);
+    // const tokens: Token[] = scanner.ScanTokens();
+    // for (token in tokens) {
+    // console.info(token);
+    // }
+}
+
+const error = (line: number, message: string): void => {
+    report(line, "", message);
+}
+
+const report = (line: number, where: string, message: string): void => {
+    console.error(`[line ${line}] Error ${where}: ${message}`);
+    hadError = true;
+}
 
 // Run
 main(process.argv);
