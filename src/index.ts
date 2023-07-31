@@ -1,5 +1,7 @@
 import process from 'node:process';
 import fs from 'node:fs';
+import Scanner from './scanner';
+import { type Token } from './token';
 
 // Track if there has been any errors
 let hadError: boolean = false;
@@ -38,16 +40,16 @@ const runPrompt = () => {
         process.stdout.write('> ');
     })
     process.stdin.on('end', () => {
-        console.log('end');
+        console.info('end');
     })
-}   
+}
 
 const run = (source: string) => {
-    // const scannedTokens = scanner(source);
-    // const tokens: Token[] = scanner.ScanTokens();
-    // for (token in tokens) {
-    // console.info(token);
-    // }
+    const scanner: Scanner = new Scanner(source);
+    const tokens: Token[] = scanner.scanTokens();
+    for (const token of tokens) {
+        console.info(token);
+    }
 }
 
 const error = (line: number, message: string): void => {
