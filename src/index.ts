@@ -6,6 +6,22 @@ import { type Token } from './token';
 // Track if there has been any errors
 let hadError: boolean = false;
 
+class Expr {
+
+}
+
+class Binary implements Expr {
+    left: Expr;
+    right: Expr;
+    operator: Token;
+
+    constructor(left: Expr, operator: Token, right: Expr) {
+        this.left = left;
+        this.right = right;
+        this.operator = operator;
+    }
+}
+
 /**
  * Main entry point to our Lox TypeScript Programming Language implementation
  * 
