@@ -6,7 +6,7 @@ import { type Token } from './token';
 // Track if there has been any errors
 let hadError: boolean = false;
 
-class Expr {
+export class Expr {
 
 }
 
