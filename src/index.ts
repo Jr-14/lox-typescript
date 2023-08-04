@@ -6,6 +6,37 @@ import { type Token } from './token';
 // Track if there has been any errors
 let hadError: boolean = false;
 
+export type Expr = 
+    | Binary
+    | Grouping
+    | Literal
+    | Unary;
+export interface Binary {
+    left: Expr;
+    right: Expr;
+    operator: Token;
+    kind: 'Binary';
+};
+export interface Grouping {
+    expression: Expr;
+    kind: 'Grouping';
+};
+export interface Literal {
+    value: any;
+    kind: 'Literal';
+};
+export interface Unary {
+    operator: Token;
+    right: Expr;
+    kind: 'Unary';
+};
+
+export const match = (type: Expr) => {
+    switch (type.kind) {
+        case 'Binary':
+            return type;
+    }
+}
 /**
  * Main entry point to our Lox TypeScript Programming Language implementation
  * 
