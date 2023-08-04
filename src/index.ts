@@ -2,6 +2,8 @@ import process from 'node:process';
 import fs from 'node:fs';
 import Scanner from './scanner';
 import { type Token } from './token';
+import TokenType from './tokentype';
+import Parser from './parser';
 
 // Track if there has been any errors
 let hadError: boolean = false;
@@ -78,13 +80,26 @@ const runPrompt = () => {
 const run = (source: string) => {
     const scanner: Scanner = new Scanner(source);
     const tokens: Token[] = scanner.scanTokens();
-    for (const token of tokens) {
-        console.info(token);
+    const parser: Parser = new Parser(tokens);
+    const expression = parser.parse();
+
+    if (hadError || !expression) {
+        return;
     }
+
+    console.log(expression);
 }
 
 const error = (line: number, message: string): void => {
     report(line, "", message);
+}
+
+const tokenError = (token: Token, message: string): void => {
+    if (token.type == TokenType.EOF) {
+        report(token.line, " at end", message);
+    } else {
+        report(token.line, ` at '${token.lexeme}' `, message);
+    }
 }
 
 const report = (line: number, where: string, message: string): void => {
@@ -98,6 +113,7 @@ export const Lox = {
     runPrompt,
     run,
     error,
+    tokenError,
     report
 }
 
