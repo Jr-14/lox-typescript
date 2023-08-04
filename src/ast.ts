@@ -13,17 +13,17 @@ export type Binary = {
     operator: Token;
 };
 
-export interface Grouping {
+export type Grouping = {
     type: 'Grouping';
     expression: Expr;
 };
 
-export interface Literal {
+export type Literal = {
     type: 'Literal';
     value: any;
 };
 
-export interface Unary {
+export type Unary = {
     type: 'Unary';
     operator: Token;
     right: Expr;
