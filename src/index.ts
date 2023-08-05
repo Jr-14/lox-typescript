@@ -92,7 +92,7 @@ const run = (source: string) => {
         return;
     }
 
-    console.log(expression);
+    console.info(expression);
     interpreter.interpret(expression);
 }
 
