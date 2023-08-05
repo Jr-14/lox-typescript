@@ -80,6 +80,7 @@ export default class Interpreter {
         } catch (error) {
             if (error instanceof RuntimeError) {
                 Lox.runtimeError(error);
+                return;
             }
             console.log('Unhandled error', error);
         }
