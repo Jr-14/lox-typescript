@@ -102,7 +102,7 @@ export default class Interpreter {
         if (object == null) {
             return false;
         }
-        if (object instanceof Boolean) {
+        if (typeof object === "boolean") {
             return Boolean(object);
         }
         return true;
