@@ -4,9 +4,14 @@ import Scanner from './scanner';
 import { type Token } from './token';
 import TokenType from './tokentype';
 import Parser from './parser';
+import RuntimeError from './runtimeError';
+import Interpreter from './interpreter';
 
 // Track if there has been any errors
 let hadError: boolean = false;
+let hadRuntimeError: boolean = false;
+
+const interpreter: Interpreter = new Interpreter();
 
 export type Expr = 
     | Binary
@@ -58,7 +63,7 @@ export const main = (args: string[]): void => {
 const runFile = (path: string) => {
     const fileData: Buffer = fs.readFileSync(path);
     run(fileData.toString('utf-8'));
-    if (hadError) {
+    if (hadError || hadRuntimeError) {
         process.exit(1);
     }
 }
@@ -88,6 +93,7 @@ const run = (source: string) => {
     }
 
     console.log(expression);
+    interpreter.interpret(expression);
 }
 
 const error = (line: number, message: string): void => {
@@ -102,6 +108,11 @@ const tokenError = (token: Token, message: string): void => {
     }
 }
 
+const runtimeError = (error: RuntimeError) => {
+    console.error(error.message + `\n[line ${error.token.line}]`);
+    hadRuntimeError = true;
+}
+
 const report = (line: number, where: string, message: string): void => {
     console.error(`[line ${line}] Error ${where}: ${message}`);
     hadError = true;
@@ -114,7 +125,8 @@ export const Lox = {
     run,
     error,
     tokenError,
-    report
+    report,
+    runtimeError
 }
 
 export default Lox;
