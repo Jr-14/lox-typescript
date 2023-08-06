@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Binary, Expr, Grouping, Literal, Unary } from "./ast";
+import { Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -11,16 +11,36 @@ export default class Parser {
         this.tokens = tokens;
     }
 
-    parse(): Expr | null {
-        try {
-            return this.expression();
-        } catch(error) {
-            return null;
+    parse(): Statements[]{
+        const statements: Statements[] = [];
+        while (!this.isAtEnd()) {
+            statements.push(this.statement());
         }
+        return statements;
     }
 
     private expression(): Expr {
         return this.equality();
+    }
+
+    private statement(): Statements {
+        if (this.match(TokenType.PRINT)) {
+            return this.printStatement();
+        }
+
+        return this.expressionStatement();
+    }
+
+    private printStatement(): Statements {
+        const value: Expr = this.expression();
+        this.consume(TokenType.SEMICOLON, "Expect ';' after value.");
+        return { type: 'Print', expression: value } as Print;
+    }
+
+    private expressionStatement(): Statements {
+        const expr: Expr = this.expression();
+        this.consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+        return { type: 'Expression Statements', expr} as ExprStatements;
     }
 
     private equality(): Expr {

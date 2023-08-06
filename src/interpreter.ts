@@ -1,4 +1,4 @@
-import { Binary, Expr, Grouping, Literal, Unary } from "./ast";
+import { Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary } from "./ast";
 import RuntimeError from "./runtimeError";
 import { Token } from "./token";
 import TokenType from "./tokentype";
@@ -73,17 +73,41 @@ export default class Interpreter {
         return null;
     }
 
-    interpret(expression: Expr): void {
+    evaluateExpressionStatement(statement: ExprStatements) {
+        this.evaluate(statement.expr)
+        return null;
+    }
+
+    evaluatePrintStatement(statement: Print) {
+        const value: any = this.evaluate(statement.expression);
+        console.info(this.stringify(value));
+        return null;
+    }
+
+    interpret(statements: Statements[]): void {
         try {
-            const value = this.evaluate(expression);
-            console.info(this.stringify(value));
+            for (const statement of statements) {
+                this.evaluateStatement(statement);
+            }
         } catch (error) {
             if (error instanceof RuntimeError) {
                 Lox.runtimeError(error);
-                return;
+            } else {
+                throw error;
             }
-            console.log('Unhandled error', error);
         }
+    }
+
+    private evaluateStatement(statement: Statements) {
+        switch (statement.type) {
+            case 'Print':
+                this.evaluatePrintStatement(statement);
+                return;
+            case 'Expression Statements':
+                this.evaluateExpressionStatement(statement);
+                return;
+        }
+
     }
 
     private evaluate(expr: Expr): any {

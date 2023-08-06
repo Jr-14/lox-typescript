@@ -40,6 +40,5 @@ export type Print = {
 
 export type ExprStatements = {
     type: 'Expression Statements';
-    left: Expr;
-    right: ';';
+    expr: Expr;
 }
