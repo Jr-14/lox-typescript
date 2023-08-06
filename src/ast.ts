@@ -6,6 +6,10 @@ export type Expr =
     | Literal 
     | Unary
 
+export type Statements = 
+    | ExprStatements
+    | Print
+
 export type Binary = {
     type: 'Binary';
     left: Expr;
@@ -28,3 +32,14 @@ export type Unary = {
     operator: Token;
     right: Expr;
 };
+
+export type Print = {
+    type: 'Print';
+    expression: Expr;
+};
+
+export type ExprStatements = {
+    type: 'Expression Statements';
+    left: Expr;
+    right: ';';
+}
