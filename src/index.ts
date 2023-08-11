@@ -62,14 +62,14 @@ const run = (source: string) => {
     const scanner: Scanner = new Scanner(source);
     const tokens: Token[] = scanner.scanTokens();
     const parser: Parser = new Parser(tokens);
-    const statements: Statements[] = parser.parse();
+    const statements: (Statements | null)[] = parser.parse();
 
     if (hadError || !statements || !statements.length) {
         return;
     }
 
     console.info(statements);
-    interpreter.interpret(statements);
+    interpreter.interpret(statements as Statements[]);
 }
 
 const error = (line: number, message: string): void => {

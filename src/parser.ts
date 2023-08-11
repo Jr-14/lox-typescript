@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary } from "./ast";
+import { Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -11,16 +11,33 @@ export default class Parser {
         this.tokens = tokens;
     }
 
-    parse(): Statements[]{
-        const statements: Statements[] = [];
+    parse(): (Statements | null)[]{
+        const statements: (Statements | null)[] = [];
         while (!this.isAtEnd()) {
-            statements.push(this.statement());
+            statements.push(this.declaration());
         }
         return statements;
     }
 
     private expression(): Expr {
         return this.equality();
+    }
+
+    private declaration(): Statements | null {
+        try {
+            if (this.match(TokenType.VAR)) {
+                return this.varDeclaration();
+            }
+            return this.statement();
+        } catch(error) {
+            if (error instanceof ParseError) {
+                this.synchronise();
+                return null;
+            } else {
+                console.error(error);
+                return null;
+            }
+        }
     }
 
     private statement(): Statements {
@@ -35,6 +52,18 @@ export default class Parser {
         const value: Expr = this.expression();
         this.consume(TokenType.SEMICOLON, "Expect ';' after value.");
         return { type: 'Print', expression: value } as Print;
+    }
+
+    private varDeclaration(): Statements {
+        const name: Token = this.consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+        let initialiser;
+        if (this.match(TokenType.EQUAL)) {
+            initialiser = this.expression();
+        }
+
+        this.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+        return { type: "Variable Declaration", name, initialiser } as VariableDeclaration;
     }
 
     private expressionStatement(): Statements {
@@ -125,6 +154,10 @@ export default class Parser {
             const expr: Expr = this.expression();
             this.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
             return { type: 'Grouping', expression: expr } as Grouping
+        }
+
+        if (this.match(TokenType.IDENTIFIER)) {
+            return { type: 'Variable', name: this.previous()} as Variable;
         }
 
         throw this.error(this.peek(), "Expect expression.");

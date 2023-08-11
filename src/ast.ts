@@ -1,3 +1,4 @@
+import { type } from 'node:os';
 import { Token } from './token';
 
 export type Expr = 
@@ -5,10 +6,12 @@ export type Expr =
     | Grouping 
     | Literal 
     | Unary
+    | Variable
 
 export type Statements = 
     | ExprStatements
     | Print
+    | VariableDeclaration
 
 export type Binary = {
     type: 'Binary';
@@ -41,4 +44,15 @@ export type Print = {
 export type ExprStatements = {
     type: 'Expression Statements';
     expr: Expr;
+};
+
+export type VariableDeclaration = {
+    type: 'Variable Declaration';
+    name: Token;
+    initialiser?: Expr;
+};
+
+export type Variable = {
+    type: 'Variable';
+    name: Token;
 }

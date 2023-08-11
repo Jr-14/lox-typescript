@@ -1,10 +1,13 @@
-import { Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary } from "./ast";
+import { Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
 import RuntimeError from "./runtimeError";
 import { Token } from "./token";
 import TokenType from "./tokentype";
 import Lox from ".";
+import Environment from "./environment";
 
 export default class Interpreter {
+
+    private environment: Environment = new Environment();
 
     evaluateLiteralExpr(expr: Literal) {
         return expr.value;
@@ -29,7 +32,7 @@ export default class Interpreter {
         return null;
     }
 
-    evaluateBinaryExpr(expr: Binary) {
+    evaluateBinaryExpr(expr: Binary): any {
         const left = this.evaluate(expr.left);
         const right = this.evaluate(expr.right);
 
@@ -70,18 +73,28 @@ export default class Interpreter {
         }
 
         // Unreachable state
-        return null;
     }
 
-    evaluateExpressionStatement(statement: ExprStatements) {
+    evaluateExpressionStatement(statement: ExprStatements): void {
         this.evaluate(statement.expr)
-        return null;
     }
 
-    evaluatePrintStatement(statement: Print) {
+    evaluatePrintStatement(statement: Print): void {
         const value: any = this.evaluate(statement.expression);
         console.info(this.stringify(value));
+    }
+
+    evaluateVarStatement(statement: VariableDeclaration): null {
+        let value: any = null;
+        if (statement.initialiser) {
+            value = this.evaluate(statement.initialiser);
+        }
+        this.environment.define(statement.name.lexeme, value);
         return null;
+    }
+
+    evaluteVarExpression(expr: Variable): any {
+        return this.environment.get(expr.name);
     }
 
     interpret(statements: Statements[]): void {
@@ -106,6 +119,9 @@ export default class Interpreter {
             case 'Expression Statements':
                 this.evaluateExpressionStatement(statement);
                 return;
+            case 'Variable Declaration':
+                this.evaluateVarStatement(statement);
+                return;
         }
 
     }
@@ -120,6 +136,8 @@ export default class Interpreter {
                 return this.evaluateBinaryExpr(expr);
             case "Grouping":
                 return this.evaluate(expr.expression);
+            case "Variable":
+                return this.evaluteVarExpression(expr);
         }
     }
 
