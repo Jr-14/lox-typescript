@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
+import { Assignment, Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -20,7 +20,7 @@ export default class Parser {
     }
 
     private expression(): Expr {
-        return this.equality();
+        return this.assignment();
     }
 
     private declaration(): Statements | null {
@@ -70,6 +70,26 @@ export default class Parser {
         const expr: Expr = this.expression();
         this.consume(TokenType.SEMICOLON, "Expect ';' after expression.");
         return { type: 'Expression Statements', expr} as ExprStatements;
+    }
+
+    private assignment(): Expr {
+        let expr: Expr = this.equality();
+
+        if (this.match(TokenType.EQUAL)) {
+            const equals: Token = this.previous();
+            const value: Expr = this.assignment();
+
+            // Use discriminating union to narrow types
+            // https://www.typescriptlang.org/docs/handbook/unions-and-intersections.html#discriminating-unions
+            if (expr.type === 'Variable') {
+                const name: Token = expr.name;
+                return { type: 'Assignment', name, value} as Assignment;
+            }
+
+            this.error(equals, "Invalid assignment targets.");
+        }
+
+        return expr;
     }
 
     private equality(): Expr {

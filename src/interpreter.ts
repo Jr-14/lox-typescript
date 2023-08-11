@@ -1,4 +1,4 @@
-import { Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
+import { Assignment, Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
 import RuntimeError from "./runtimeError";
 import { Token } from "./token";
 import TokenType from "./tokentype";
@@ -93,6 +93,12 @@ export default class Interpreter {
         return null;
     }
 
+    evaluateAssignExpression(expr: Assignment): any {
+        const value: any = this.evaluate(expr.value);
+        this.environment.assign(expr.name, value);
+        return value;
+    }
+
     evaluteVarExpression(expr: Variable): any {
         return this.environment.get(expr.name);
     }
@@ -122,6 +128,8 @@ export default class Interpreter {
             case 'Variable Declaration':
                 this.evaluateVarStatement(statement);
                 return;
+            default:
+                throw new Error('Attempted to evaluate unhandled statement.');
         }
 
     }
@@ -138,6 +146,10 @@ export default class Interpreter {
                 return this.evaluate(expr.expression);
             case "Variable":
                 return this.evaluteVarExpression(expr);
+            case "Assignment":
+                return this.evaluateAssignExpression(expr);
+            default:
+                throw new Error('Attempted to evaluate unhandled expression.');
         }
     }
 

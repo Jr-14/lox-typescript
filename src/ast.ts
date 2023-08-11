@@ -1,17 +1,23 @@
-import { type } from 'node:os';
 import { Token } from './token';
 
 export type Expr = 
+    | Assignment
     | Binary 
     | Grouping 
     | Literal 
     | Unary
-    | Variable
+    | Variable;
 
 export type Statements = 
     | ExprStatements
     | Print
-    | VariableDeclaration
+    | VariableDeclaration;
+
+export type Assignment = {
+    type: 'Assignment';
+    name: Token;
+    value: Expr;
+};
 
 export type Binary = {
     type: 'Binary';
