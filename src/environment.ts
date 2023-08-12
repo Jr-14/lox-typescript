@@ -5,6 +5,11 @@ import { Token } from "./token";
 export default class Environment {
     values: Map<string, any> = new Map();
 
+    enclosing: Environment | null;
+
+    constructor(enclosing?: Environment) {
+        this.enclosing = enclosing ?? null;
+    }
 
     /**
      * Bind a global variable definition name to a value
@@ -26,6 +31,11 @@ export default class Environment {
         if (this.values.has(name.lexeme)) {
             return this.values.get(name.lexeme);
         }
+
+        if (this.enclosing !== null) {
+            return this.enclosing.get(name);
+        }
+
         throw new RuntimeError(name, `Undefined variable '${name.lexeme}'.`);
     }
 
@@ -33,6 +43,10 @@ export default class Environment {
         if (this.values.has(name.lexeme)) {
             this.values.set(name.lexeme, value);
             return;
+        }
+
+        if (this.enclosing !== null) {
+            this.enclosing.assign(name, value);
         }
 
         throw new RuntimeError(name, `Undefined varaible '${name.lexeme}'.`);

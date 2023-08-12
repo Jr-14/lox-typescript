@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Assignment, Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
+import { Assignment, Binary, Block, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -45,6 +45,10 @@ export default class Parser {
             return this.printStatement();
         }
 
+        if (this.match(TokenType.LEFT_BRACE)) {
+            return { type: 'Block', statements: this.block() } as Block;
+        }
+
         return this.expressionStatement();
     }
 
@@ -70,6 +74,17 @@ export default class Parser {
         const expr: Expr = this.expression();
         this.consume(TokenType.SEMICOLON, "Expect ';' after expression.");
         return { type: 'Expression Statements', expr} as ExprStatements;
+    }
+
+    private block(): (Statements | null)[] {
+        const statements: (Statements | null)[] = [];
+
+        while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+            statements.push(this.declaration())
+        }
+
+        this.consume(TokenType.RIGHT_BRACE, `Expect '}' after block."`);
+        return statements;
     }
 
     private assignment(): Expr {

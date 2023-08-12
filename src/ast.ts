@@ -9,6 +9,7 @@ export type Expr =
     | Variable;
 
 export type Statements = 
+    | Block
     | ExprStatements
     | Print
     | VariableDeclaration;
@@ -17,6 +18,11 @@ export type Assignment = {
     type: 'Assignment';
     name: Token;
     value: Expr;
+};
+
+export type Block = {
+    type: 'Block';
+    statements: Statements[];
 };
 
 export type Binary = {

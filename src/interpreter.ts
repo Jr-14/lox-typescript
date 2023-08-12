@@ -128,10 +128,25 @@ export default class Interpreter {
             case 'Variable Declaration':
                 this.evaluateVarStatement(statement);
                 return;
+            case 'Block':
+                this.evaluateBlockStatement(statement.statements, new Environment(this.environment));
+                return;
             default:
                 throw new Error('Attempted to evaluate unhandled statement.');
         }
 
+    }
+
+    private evaluateBlockStatement(statements: Statements[], environment: Environment) {
+        const previous: Environment = this.environment;
+        try {
+            this.environment = environment;
+            for (const statement of statements) {
+                this.evaluateStatement(statement);
+            }
+        } finally {
+            this.environment = previous;
+        }
     }
 
     private evaluate(expr: Expr): any {
