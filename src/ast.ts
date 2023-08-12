@@ -1,10 +1,29 @@
 import { Token } from './token';
 
 export type Expr = 
+    | Assignment
     | Binary 
     | Grouping 
     | Literal 
     | Unary
+    | Variable;
+
+export type Statements = 
+    | Block
+    | ExprStatements
+    | Print
+    | VariableDeclaration;
+
+export type Assignment = {
+    type: 'Assignment';
+    name: Token;
+    value: Expr;
+};
+
+export type Block = {
+    type: 'Block';
+    statements: Statements[];
+};
 
 export type Binary = {
     type: 'Binary';
@@ -28,3 +47,24 @@ export type Unary = {
     operator: Token;
     right: Expr;
 };
+
+export type Print = {
+    type: 'Print';
+    expression: Expr;
+};
+
+export type ExprStatements = {
+    type: 'Expression Statements';
+    expr: Expr;
+};
+
+export type VariableDeclaration = {
+    type: 'Variable Declaration';
+    name: Token;
+    initialiser?: Expr;
+};
+
+export type Variable = {
+    type: 'Variable';
+    name: Token;
+}

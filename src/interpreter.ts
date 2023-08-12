@@ -1,10 +1,13 @@
-import { Binary, Expr, Grouping, Literal, Unary } from "./ast";
+import { Assignment, Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
 import RuntimeError from "./runtimeError";
 import { Token } from "./token";
 import TokenType from "./tokentype";
 import Lox from ".";
+import Environment from "./environment";
 
 export default class Interpreter {
+
+    private environment: Environment = new Environment();
 
     evaluateLiteralExpr(expr: Literal) {
         return expr.value;
@@ -29,7 +32,7 @@ export default class Interpreter {
         return null;
     }
 
-    evaluateBinaryExpr(expr: Binary) {
+    evaluateBinaryExpr(expr: Binary): any {
         const left = this.evaluate(expr.left);
         const right = this.evaluate(expr.right);
 
@@ -70,19 +73,79 @@ export default class Interpreter {
         }
 
         // Unreachable state
+    }
+
+    evaluateExpressionStatement(statement: ExprStatements): void {
+        this.evaluate(statement.expr)
+    }
+
+    evaluatePrintStatement(statement: Print): void {
+        const value: any = this.evaluate(statement.expression);
+        console.info(this.stringify(value));
+    }
+
+    evaluateVarStatement(statement: VariableDeclaration): null {
+        let value: any = null;
+        if (statement.initialiser) {
+            value = this.evaluate(statement.initialiser);
+        }
+        this.environment.define(statement.name.lexeme, value);
         return null;
     }
 
-    interpret(expression: Expr): void {
+    evaluateAssignExpression(expr: Assignment): any {
+        const value: any = this.evaluate(expr.value);
+        this.environment.assign(expr.name, value);
+        return value;
+    }
+
+    evaluteVarExpression(expr: Variable): any {
+        return this.environment.get(expr.name);
+    }
+
+    interpret(statements: Statements[]): void {
         try {
-            const value = this.evaluate(expression);
-            console.info(this.stringify(value));
+            for (const statement of statements) {
+                this.evaluateStatement(statement);
+            }
         } catch (error) {
             if (error instanceof RuntimeError) {
                 Lox.runtimeError(error);
-                return;
+            } else {
+                throw error;
             }
-            console.log('Unhandled error', error);
+        }
+    }
+
+    private evaluateStatement(statement: Statements) {
+        switch (statement.type) {
+            case 'Print':
+                this.evaluatePrintStatement(statement);
+                return;
+            case 'Expression Statements':
+                this.evaluateExpressionStatement(statement);
+                return;
+            case 'Variable Declaration':
+                this.evaluateVarStatement(statement);
+                return;
+            case 'Block':
+                this.evaluateBlockStatement(statement.statements, new Environment(this.environment));
+                return;
+            default:
+                throw new Error('Attempted to evaluate unhandled statement.');
+        }
+
+    }
+
+    private evaluateBlockStatement(statements: Statements[], environment: Environment) {
+        const previous: Environment = this.environment;
+        try {
+            this.environment = environment;
+            for (const statement of statements) {
+                this.evaluateStatement(statement);
+            }
+        } finally {
+            this.environment = previous;
         }
     }
 
@@ -96,6 +159,12 @@ export default class Interpreter {
                 return this.evaluateBinaryExpr(expr);
             case "Grouping":
                 return this.evaluate(expr.expression);
+            case "Variable":
+                return this.evaluteVarExpression(expr);
+            case "Assignment":
+                return this.evaluateAssignExpression(expr);
+            default:
+                throw new Error('Attempted to evaluate unhandled expression.');
         }
     }
 

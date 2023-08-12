@@ -6,6 +6,7 @@ import TokenType from './tokentype';
 import Parser from './parser';
 import RuntimeError from './runtimeError';
 import Interpreter from './interpreter';
+import { Expr, Statements } from './ast';
 
 // Track if there has been any errors
 let hadError: boolean = false;
@@ -13,33 +14,8 @@ let hadRuntimeError: boolean = false;
 
 const interpreter: Interpreter = new Interpreter();
 
-export type Expr = 
-    | Binary
-    | Grouping
-    | Literal
-    | Unary;
-export interface Binary {
-    left: Expr;
-    right: Expr;
-    operator: Token;
-    kind: 'Binary';
-};
-export interface Grouping {
-    expression: Expr;
-    kind: 'Grouping';
-};
-export interface Literal {
-    value: any;
-    kind: 'Literal';
-};
-export interface Unary {
-    operator: Token;
-    right: Expr;
-    kind: 'Unary';
-};
-
 export const match = (type: Expr) => {
-    switch (type.kind) {
+    switch (type.type) {
         case 'Binary':
             return type;
     }
@@ -86,14 +62,14 @@ const run = (source: string) => {
     const scanner: Scanner = new Scanner(source);
     const tokens: Token[] = scanner.scanTokens();
     const parser: Parser = new Parser(tokens);
-    const expression = parser.parse();
+    const statements: (Statements | null)[] = parser.parse();
 
-    if (hadError || !expression) {
+    if (hadError || !statements || !statements.length) {
         return;
     }
 
-    console.info(expression);
-    interpreter.interpret(expression);
+    console.info(statements);
+    interpreter.interpret(statements as Statements[]);
 }
 
 const error = (line: number, message: string): void => {

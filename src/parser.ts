@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Binary, Expr, Grouping, Literal, Unary } from "./ast";
+import { Assignment, Binary, Block, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -11,16 +11,100 @@ export default class Parser {
         this.tokens = tokens;
     }
 
-    parse(): Expr | null {
-        try {
-            return this.expression();
-        } catch(error) {
-            return null;
+    parse(): (Statements | null)[]{
+        const statements: (Statements | null)[] = [];
+        while (!this.isAtEnd()) {
+            statements.push(this.declaration());
         }
+        return statements;
     }
 
     private expression(): Expr {
-        return this.equality();
+        return this.assignment();
+    }
+
+    private declaration(): Statements | null {
+        try {
+            if (this.match(TokenType.VAR)) {
+                return this.varDeclaration();
+            }
+            return this.statement();
+        } catch(error) {
+            if (error instanceof ParseError) {
+                this.synchronise();
+                return null;
+            } else {
+                console.error(error);
+                return null;
+            }
+        }
+    }
+
+    private statement(): Statements {
+        if (this.match(TokenType.PRINT)) {
+            return this.printStatement();
+        }
+
+        if (this.match(TokenType.LEFT_BRACE)) {
+            return { type: 'Block', statements: this.block() } as Block;
+        }
+
+        return this.expressionStatement();
+    }
+
+    private printStatement(): Statements {
+        const value: Expr = this.expression();
+        this.consume(TokenType.SEMICOLON, "Expect ';' after value.");
+        return { type: 'Print', expression: value } as Print;
+    }
+
+    private varDeclaration(): Statements {
+        const name: Token = this.consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+        let initialiser;
+        if (this.match(TokenType.EQUAL)) {
+            initialiser = this.expression();
+        }
+
+        this.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+        return { type: "Variable Declaration", name, initialiser } as VariableDeclaration;
+    }
+
+    private expressionStatement(): Statements {
+        const expr: Expr = this.expression();
+        this.consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+        return { type: 'Expression Statements', expr} as ExprStatements;
+    }
+
+    private block(): (Statements | null)[] {
+        const statements: (Statements | null)[] = [];
+
+        while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+            statements.push(this.declaration())
+        }
+
+        this.consume(TokenType.RIGHT_BRACE, `Expect '}' after block."`);
+        return statements;
+    }
+
+    private assignment(): Expr {
+        let expr: Expr = this.equality();
+
+        if (this.match(TokenType.EQUAL)) {
+            const equals: Token = this.previous();
+            const value: Expr = this.assignment();
+
+            // Use discriminating union to narrow types
+            // https://www.typescriptlang.org/docs/handbook/unions-and-intersections.html#discriminating-unions
+            if (expr.type === 'Variable') {
+                const name: Token = expr.name;
+                return { type: 'Assignment', name, value} as Assignment;
+            }
+
+            this.error(equals, "Invalid assignment targets.");
+        }
+
+        return expr;
     }
 
     private equality(): Expr {
@@ -105,6 +189,10 @@ export default class Parser {
             const expr: Expr = this.expression();
             this.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
             return { type: 'Grouping', expression: expr } as Grouping
+        }
+
+        if (this.match(TokenType.IDENTIFIER)) {
+            return { type: 'Variable', name: this.previous()} as Variable;
         }
 
         throw this.error(this.peek(), "Expect expression.");
