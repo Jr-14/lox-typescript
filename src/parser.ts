@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Assignment, Binary, Block, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
+import { Assignment, Binary, Block, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -49,7 +49,25 @@ export default class Parser {
             return { type: 'Block', statements: this.block() } as Block;
         }
 
+        if (this.match(TokenType.IF)) {
+            return this.ifStatement();
+        }
+
         return this.expressionStatement();
+    }
+
+    private ifStatement(): If {
+        this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+        const condition: Expr = this.expression();
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+        const thenBranch: Statements = this.statement();
+        let elseBranch = null;
+        if (this.match(TokenType.ELSE)) {
+            elseBranch = this.statement();
+        }
+
+        return { type: 'If', condition, thenBranch, elseBranch } as If;
     }
 
     private printStatement(): Statements {
@@ -88,7 +106,7 @@ export default class Parser {
     }
 
     private assignment(): Expr {
-        let expr: Expr = this.equality();
+        let expr: Expr = this.or();
 
         if (this.match(TokenType.EQUAL)) {
             const equals: Token = this.previous();
@@ -102,6 +120,30 @@ export default class Parser {
             }
 
             this.error(equals, "Invalid assignment targets.");
+        }
+
+        return expr;
+    }
+
+    private or(): Expr {
+        let expr: Expr = this.and();
+
+        while (this.match(TokenType.OR)) {
+            const operator: Token = this.previous();
+            const right: Expr = this.and();
+            expr = { type: 'Logical', left: expr, operator, right } as Logical;
+        }
+
+        return expr;
+    }
+
+    private and(): Expr {
+        let expr: Expr = this.equality();
+
+        while (this.match(TokenType.AND)) {
+            const operator: Token = this.previous();
+            const right: Expr = this.equality();
+            expr = { type: 'Logical', left: expr, operator, right } as Logical;
         }
 
         return expr;
