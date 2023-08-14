@@ -111,7 +111,7 @@ export default class Interpreter {
 
     evaluateWhileStatement(statement: While): null {
         while (this.isTruthy(this.evaluate(statement.condition))) {
-            this.evaluateStatement(statement);
+            this.evaluateStatement(statement.body);
         }
         return null;
     }
