@@ -14,7 +14,9 @@ export type ReservedKeywords =
     | 'this'
     | 'true'
     | 'var'
-    | 'while';
+    | 'while'
+    | 'break'
+    | 'continue';
 
 enum TokenType {
     // Single-character tokens
@@ -36,7 +38,7 @@ enum TokenType {
     AND = 'And', CLASS = 'Class', ELSE = 'Else', IF = 'If', FALSE = 'False',
     FUN = 'Function', FOR = 'For', NIL = 'Nil', OR = 'Or', PRINT = 'Print',
     RETURN = 'Return', SUPER = 'Super', THIS = 'This', TRUE = 'True',
-    VAR = 'Var', WHILE = 'While',
+    VAR = 'Var', WHILE = 'While', BREAK = 'Break', CONTINUE = 'Continue',
 
     EOF = 'End of File'
 }
