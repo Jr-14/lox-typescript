@@ -141,7 +141,6 @@ export default class Interpreter {
     }
 
     private evaluateStatement(statement: Statements) {
-        console.log(statement);
         switch (statement.type) {
             case 'Print':
                 this.evaluatePrintStatement(statement);

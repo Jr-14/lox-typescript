@@ -41,6 +41,10 @@ export default class Parser {
     }
 
     private statement(): Statements {
+        if (this.match(TokenType.FOR)) {
+            return this.forStatement();
+        }
+
         if (this.match(TokenType.PRINT)) {
             return this.printStatement();
         }
@@ -59,6 +63,47 @@ export default class Parser {
 
         return this.expressionStatement();
     }
+
+    private forStatement(): Statements {
+        this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+        let initialiser: Statements | null;
+        if (this.match(TokenType.SEMICOLON)) {
+            initialiser = null;
+        } else if (this.match(TokenType.VAR)) {
+            initialiser = this.varDeclaration();
+        } else {
+            initialiser = this.expressionStatement();
+        }
+
+        let condition: Expr | null = null;
+        if (!this.check(TokenType.SEMICOLON)) {
+            condition = this.expression();
+        }
+        this.consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+        let increment: Expr | null = null;
+        if (!this.check(TokenType.RIGHT_PAREN)) {
+            increment = this.expression();
+        }
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        let body: Statements = this.statement();
+
+        if (increment !== null) {
+            const incrementStatement: ExprStatements = { type: 'Expression Statements', expr: increment } as ExprStatements;
+            body = { type: 'Block',  statements: [body, incrementStatement] } as Block;
+        }
+
+        if (condition == null) {
+            condition = { type: 'Literal', value: true } as Literal;
+        }
+        body = { type: 'While', condition, body } as While;
+
+        if (initialiser !== null) {
+            body = { type: 'Block', statements: [initialiser, body] } as Block;
+        }
+        return body;
+    }   
 
     private ifStatement(): If {
         this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
