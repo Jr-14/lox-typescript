@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Assignment, Binary, Block, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
+import { Assignment, Binary, Block, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -53,6 +53,10 @@ export default class Parser {
             return this.ifStatement();
         }
 
+        if (this.match(TokenType.WHILE)) {
+            return this.whileStatement();
+        }
+
         return this.expressionStatement();
     }
 
@@ -86,6 +90,15 @@ export default class Parser {
 
         this.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
         return { type: "Variable Declaration", name, initialiser } as VariableDeclaration;
+    }
+
+    private whileStatement(): Statements {
+        this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+        const condition: Expr = this.expression();
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+        const body: Statements = this.statement();
+
+        return { type: 'While', condition, body } as While;
     }
 
     private expressionStatement(): Statements {

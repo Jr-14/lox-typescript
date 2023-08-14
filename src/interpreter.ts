@@ -1,4 +1,4 @@
-import { Assignment, Binary, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
+import { Assignment, Binary, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import RuntimeError from "./runtimeError";
 import { Token } from "./token";
 import TokenType from "./tokentype";
@@ -109,6 +109,13 @@ export default class Interpreter {
         return null;
     }
 
+    evaluateWhileStatement(statement: While): null {
+        while (this.isTruthy(this.evaluate(statement.condition))) {
+            this.evaluateStatement(statement);
+        }
+        return null;
+    }
+
     evaluateAssignExpression(expr: Assignment): any {
         const value: any = this.evaluate(expr.value);
         this.environment.assign(expr.name, value);
@@ -150,6 +157,9 @@ export default class Interpreter {
                 return;
             case 'If':
                 this.evaluateIfStatement(statement);
+                return;
+            case 'While':
+                this.evaluateWhileStatement(statement);
                 return;
             default:
                 throw new Error(`Attempted to evaluate unhandled statement. Statement - ${statement}`);

@@ -14,7 +14,9 @@ export type Statements =
     | If
     | ExprStatements
     | Print
-    | VariableDeclaration;
+    | VariableDeclaration
+    | While;
+
 
 export type Assignment = {
     type: 'Assignment';
@@ -76,11 +78,17 @@ export type VariableDeclaration = {
 export type Variable = {
     type: 'Variable';
     name: Token;
-}
+};
 
 export type Logical = {
     type: 'Logical';
     left: Expr;
     operator: Token;
     right: Expr;
-}
+};
+
+export type While = {
+    type: 'While';
+    condition: Expr;
+    body: Statements;
+};
