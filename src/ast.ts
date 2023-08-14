@@ -15,8 +15,9 @@ export type Statements =
     | ExprStatements
     | Print
     | VariableDeclaration
-    | While;
-
+    | While
+    | Break
+    | Continue;
 
 export type Assignment = {
     type: 'Assignment';
@@ -92,3 +93,11 @@ export type While = {
     condition: Expr;
     body: Statements;
 };
+
+export type Break = {
+    type: 'Break';
+};
+
+export type Continue = {
+    type: 'Continue';
+}

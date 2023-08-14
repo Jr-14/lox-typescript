@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Assignment, Binary, Block, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
+import { Assignment, Binary, Block, Break, Continue, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -61,7 +61,22 @@ export default class Parser {
             return this.whileStatement();
         }
 
+        if (this.match(TokenType.BREAK)) {
+            // Handle break statement
+            return this.breakStatement();
+        }
+
+        if (this.match(TokenType.CONTINUE)) {
+            // Handdle continue statement
+            return { type: 'Continue' } as Continue;
+        }
+
         return this.expressionStatement();
+    }
+
+    private breakStatement() {
+        this.consume(TokenType.SEMICOLON, "Expect ';' after break keyword.");
+        return { type: 'Break' } as Break;
     }
 
     private forStatement(): Statements {
