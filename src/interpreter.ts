@@ -52,7 +52,7 @@ export default class Interpreter {
             case TokenType.BANG_EQUAL:
                 return !this.isEqual(left, right);
             case TokenType.EQUAL_EQUAL:
-                return !this.isEqual(left, right);
+                return this.isEqual(left, right);
             case TokenType.MINUS:
                 this.checkNumberOperands(expr.operator, left, right);
                 return Number(left) - Number(right);
@@ -102,7 +102,7 @@ export default class Interpreter {
 
     evaluateVarStatement(statement: VariableDeclaration): null {
         let value: any = null;
-        if (statement.initialiser) {
+        if (statement.initialiser != null) {
             value = this.evaluate(statement.initialiser);
         }
         this.environment.define(statement.name.lexeme, value);

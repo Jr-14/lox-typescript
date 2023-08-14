@@ -83,7 +83,7 @@ export default class Parser {
     private varDeclaration(): Statements {
         const name: Token = this.consume(TokenType.IDENTIFIER, "Expect variable name.");
 
-        let initialiser;
+        let initialiser = null;
         if (this.match(TokenType.EQUAL)) {
             initialiser = this.expression();
         }
