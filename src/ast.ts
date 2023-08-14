@@ -6,13 +6,17 @@ export type Expr =
     | Grouping 
     | Literal 
     | Unary
-    | Variable;
+    | Variable
+    | Logical;
 
 export type Statements = 
     | Block
+    | If
     | ExprStatements
     | Print
-    | VariableDeclaration;
+    | VariableDeclaration
+    | While;
+
 
 export type Assignment = {
     type: 'Assignment';
@@ -23,6 +27,13 @@ export type Assignment = {
 export type Block = {
     type: 'Block';
     statements: Statements[];
+};
+
+export type If = {
+    type: 'If';
+    condition: Expr;
+    thenBranch: Statements;
+    elseBranch: Statements | null;
 };
 
 export type Binary = {
@@ -67,4 +78,17 @@ export type VariableDeclaration = {
 export type Variable = {
     type: 'Variable';
     name: Token;
-}
+};
+
+export type Logical = {
+    type: 'Logical';
+    left: Expr;
+    operator: Token;
+    right: Expr;
+};
+
+export type While = {
+    type: 'While';
+    condition: Expr;
+    body: Statements;
+};

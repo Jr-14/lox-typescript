@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Assignment, Binary, Block, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
+import { Assignment, Binary, Block, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -41,6 +41,10 @@ export default class Parser {
     }
 
     private statement(): Statements {
+        if (this.match(TokenType.FOR)) {
+            return this.forStatement();
+        }
+
         if (this.match(TokenType.PRINT)) {
             return this.printStatement();
         }
@@ -49,7 +53,70 @@ export default class Parser {
             return { type: 'Block', statements: this.block() } as Block;
         }
 
+        if (this.match(TokenType.IF)) {
+            return this.ifStatement();
+        }
+
+        if (this.match(TokenType.WHILE)) {
+            return this.whileStatement();
+        }
+
         return this.expressionStatement();
+    }
+
+    private forStatement(): Statements {
+        this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+        let initialiser: Statements | null;
+        if (this.match(TokenType.SEMICOLON)) {
+            initialiser = null;
+        } else if (this.match(TokenType.VAR)) {
+            initialiser = this.varDeclaration();
+        } else {
+            initialiser = this.expressionStatement();
+        }
+
+        let condition: Expr | null = null;
+        if (!this.check(TokenType.SEMICOLON)) {
+            condition = this.expression();
+        }
+        this.consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+        let increment: Expr | null = null;
+        if (!this.check(TokenType.RIGHT_PAREN)) {
+            increment = this.expression();
+        }
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        let body: Statements = this.statement();
+
+        if (increment !== null) {
+            const incrementStatement: ExprStatements = { type: 'Expression Statements', expr: increment } as ExprStatements;
+            body = { type: 'Block',  statements: [body, incrementStatement] } as Block;
+        }
+
+        if (condition == null) {
+            condition = { type: 'Literal', value: true } as Literal;
+        }
+        body = { type: 'While', condition, body } as While;
+
+        if (initialiser !== null) {
+            body = { type: 'Block', statements: [initialiser, body] } as Block;
+        }
+        return body;
+    }   
+
+    private ifStatement(): If {
+        this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+        const condition: Expr = this.expression();
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+        const thenBranch: Statements = this.statement();
+        let elseBranch = null;
+        if (this.match(TokenType.ELSE)) {
+            elseBranch = this.statement();
+        }
+
+        return { type: 'If', condition, thenBranch, elseBranch } as If;
     }
 
     private printStatement(): Statements {
@@ -61,13 +128,22 @@ export default class Parser {
     private varDeclaration(): Statements {
         const name: Token = this.consume(TokenType.IDENTIFIER, "Expect variable name.");
 
-        let initialiser;
+        let initialiser = null;
         if (this.match(TokenType.EQUAL)) {
             initialiser = this.expression();
         }
 
         this.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
         return { type: "Variable Declaration", name, initialiser } as VariableDeclaration;
+    }
+
+    private whileStatement(): Statements {
+        this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+        const condition: Expr = this.expression();
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+        const body: Statements = this.statement();
+
+        return { type: 'While', condition, body } as While;
     }
 
     private expressionStatement(): Statements {
@@ -88,7 +164,7 @@ export default class Parser {
     }
 
     private assignment(): Expr {
-        let expr: Expr = this.equality();
+        let expr: Expr = this.or();
 
         if (this.match(TokenType.EQUAL)) {
             const equals: Token = this.previous();
@@ -102,6 +178,30 @@ export default class Parser {
             }
 
             this.error(equals, "Invalid assignment targets.");
+        }
+
+        return expr;
+    }
+
+    private or(): Expr {
+        let expr: Expr = this.and();
+
+        while (this.match(TokenType.OR)) {
+            const operator: Token = this.previous();
+            const right: Expr = this.and();
+            expr = { type: 'Logical', left: expr, operator, right } as Logical;
+        }
+
+        return expr;
+    }
+
+    private and(): Expr {
+        let expr: Expr = this.equality();
+
+        while (this.match(TokenType.AND)) {
+            const operator: Token = this.previous();
+            const right: Expr = this.equality();
+            expr = { type: 'Logical', left: expr, operator, right } as Logical;
         }
 
         return expr;

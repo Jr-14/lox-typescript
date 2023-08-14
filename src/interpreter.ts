@@ -1,4 +1,4 @@
-import { Assignment, Binary, Expr, ExprStatements, Grouping, Literal, Print, Statements, Unary, Variable, VariableDeclaration } from "./ast";
+import { Assignment, Binary, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import RuntimeError from "./runtimeError";
 import { Token } from "./token";
 import TokenType from "./tokentype";
@@ -52,7 +52,7 @@ export default class Interpreter {
             case TokenType.BANG_EQUAL:
                 return !this.isEqual(left, right);
             case TokenType.EQUAL_EQUAL:
-                return !this.isEqual(left, right);
+                return this.isEqual(left, right);
             case TokenType.MINUS:
                 this.checkNumberOperands(expr.operator, left, right);
                 return Number(left) - Number(right);
@@ -75,6 +75,22 @@ export default class Interpreter {
         // Unreachable state
     }
 
+    evaluateLogicalExpr(expr: Logical): any {
+        const left: any = this.evaluate(expr.left);
+
+        if (expr.operator.type === TokenType.OR) {
+            if (this.isTruthy(left)) {
+                return left;
+            }
+        } else {
+            if (!this.isTruthy(left)) {
+                return left;
+            }
+        }
+
+        return this.evaluate(expr.right);
+    }
+
     evaluateExpressionStatement(statement: ExprStatements): void {
         this.evaluate(statement.expr)
     }
@@ -86,10 +102,17 @@ export default class Interpreter {
 
     evaluateVarStatement(statement: VariableDeclaration): null {
         let value: any = null;
-        if (statement.initialiser) {
+        if (statement.initialiser != null) {
             value = this.evaluate(statement.initialiser);
         }
         this.environment.define(statement.name.lexeme, value);
+        return null;
+    }
+
+    evaluateWhileStatement(statement: While): null {
+        while (this.isTruthy(this.evaluate(statement.condition))) {
+            this.evaluateStatement(statement.body);
+        }
         return null;
     }
 
@@ -131,10 +154,24 @@ export default class Interpreter {
             case 'Block':
                 this.evaluateBlockStatement(statement.statements, new Environment(this.environment));
                 return;
+            case 'If':
+                this.evaluateIfStatement(statement);
+                return;
+            case 'While':
+                this.evaluateWhileStatement(statement);
+                return;
             default:
-                throw new Error('Attempted to evaluate unhandled statement.');
+                throw new Error(`Attempted to evaluate unhandled statement. Statement - ${statement}`);
         }
-
+    }
+    
+    private evaluateIfStatement(statement: If): null {
+        if (this.isTruthy(this.evaluate(statement.condition))) {
+            this.evaluateStatement(statement.thenBranch)
+        } else if (statement.elseBranch !== null) {
+            this.evaluateStatement(statement.elseBranch);
+        }
+        return null;
     }
 
     private evaluateBlockStatement(statements: Statements[], environment: Environment) {
@@ -163,6 +200,8 @@ export default class Interpreter {
                 return this.evaluteVarExpression(expr);
             case "Assignment":
                 return this.evaluateAssignExpression(expr);
+            case "Logical":
+                return this.evaluateLogicalExpr(expr);
             default:
                 throw new Error('Attempted to evaluate unhandled expression.');
         }

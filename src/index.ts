@@ -68,7 +68,7 @@ const run = (source: string) => {
         return;
     }
 
-    console.info(statements);
+    // console.info(statements);
     interpreter.interpret(statements as Statements[]);
 }
 
