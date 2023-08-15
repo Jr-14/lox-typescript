@@ -160,6 +160,9 @@ export default class Interpreter {
             case 'While':
                 this.evaluateWhileStatement(statement);
                 return;
+            case 'Break':
+                this.evaluateBreakStatement(statement);
+                return;
             default:
                 throw new Error(`Attempted to evaluate unhandled statement. Statement - ${statement}`);
         }
@@ -183,6 +186,15 @@ export default class Interpreter {
             }
         } finally {
             this.environment = previous;
+        }
+    }
+
+    private evaluateBreakStatement(statement: Statements) {
+        const previousEnvironment: Environment = this.environment;
+        try {
+            
+        } finally {
+
         }
     }
 

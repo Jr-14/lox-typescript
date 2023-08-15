@@ -1,0 +1,21 @@
+# Break and continue statements
+
+## Break statement
+
+A break statement moves the control flow from the current scope, to the parent scope if it exists.
+
+For example:
+```
+var i = 0;
+if (i < 1) {
+    var j = 1;
+    print "hello";
+    break;
+    print "world";
+    print j;
+}
+```
+
+This prints to standard output `hello` and skips the next print statements. 
+
+Once the break statement is reached, it restores the parente environment as the current environment.

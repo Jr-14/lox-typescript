@@ -62,13 +62,11 @@ export default class Parser {
         }
 
         if (this.match(TokenType.BREAK)) {
-            // Handle break statement
             return this.breakStatement();
         }
 
         if (this.match(TokenType.CONTINUE)) {
-            // Handdle continue statement
-            return { type: 'Continue' } as Continue;
+            return this.continueStatement();
         }
 
         return this.expressionStatement();
@@ -77,6 +75,11 @@ export default class Parser {
     private breakStatement() {
         this.consume(TokenType.SEMICOLON, "Expect ';' after break keyword.");
         return { type: 'Break' } as Break;
+    }
+
+    private continueStatement() {
+        this.consume(TokenType.SEMICOLON, "Expect ';' after continue keyword.");
+        return { type: 'Continue' } as Continue;
     }
 
     private forStatement(): Statements {
@@ -379,6 +382,8 @@ export default class Parser {
                 case TokenType.WHILE:
                 case TokenType.PRINT:
                 case TokenType.RETURN:
+                case TokenType.BREAK:
+                case TokenType.CONTINUE:
                     return;
             }
 
