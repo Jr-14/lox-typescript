@@ -1,9 +1,10 @@
-import { Assignment, Binary, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
+import { Assignment, Binary, Call, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import RuntimeError from "./runtimeError";
 import { Token } from "./token";
 import TokenType from "./tokentype";
 import Lox from ".";
 import Environment from "./environment";
+import { LoxCallable } from "./loxCallable";
 
 export default class Interpreter {
 
@@ -73,6 +74,25 @@ export default class Interpreter {
         }
 
         // Unreachable state
+    }
+
+    evaluateCallExpr(expr: Call) {
+        const callee: any = this.evaluate(expr.callee);
+
+        const args = [];
+        for (const arg of expr.arguments) {
+            args.push(this.evaluate(arg));
+        }
+
+        if ('type' in callee && callee.type !== 'LoxCallable') {
+            throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+        }
+
+        const func = callee as object & LoxCallable;
+        if (args.length !== func.arity()) {
+            throw new RuntimeError(expr.paren, `Expect + ${func.arity()} arguments but got ${args.length}.`);
+        }
+        return func.call(this, args);
     }
 
     evaluateLogicalExpr(expr: Logical): any {

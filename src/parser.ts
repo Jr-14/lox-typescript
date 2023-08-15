@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Assignment, Binary, Block, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
+import { Assignment, Binary, Block, Call, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -270,6 +270,35 @@ export default class Parser {
         return this.primary();
     }
 
+    private finishCall(callee: Expr): Expr {
+        const args: Expr[] = [];
+        if (!this.check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (args.length >= 255) {
+                    this.error(this.peek(), "Can't have more than 255 arguments.");
+                }
+                args.push(this.expression());
+            } while (this.match(TokenType.COMMA));
+        }
+        const paren: Token = this.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+
+        return { type: 'Call', callee, paren, arguments: args } as Call;
+    }
+
+    private call(): Expr {
+        let expr: Expr = this.primary();
+
+        while (true) {
+            if (this.match(TokenType.LEFT_PAREN)) {
+                expr = this.finishCall(expr);     
+            } else {
+                break;
+            }
+        }
+
+        return expr;
+    }
+
     private primary(): Expr {
         if (this.match(TokenType.FALSE)) {
             return { type: 'Literal', value: false } as Literal;
@@ -295,7 +324,7 @@ export default class Parser {
             return { type: 'Variable', name: this.previous()} as Variable;
         }
 
-        throw this.error(this.peek(), "Expect expression.");
+        return this.call();
     }
 
     private match(...types: TokenType[]): boolean {

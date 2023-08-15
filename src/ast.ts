@@ -3,6 +3,7 @@ import { Token } from './token';
 export type Expr = 
     | Assignment
     | Binary 
+    | Call
     | Grouping 
     | Literal 
     | Unary
@@ -27,6 +28,13 @@ export type Assignment = {
 export type Block = {
     type: 'Block';
     statements: Statements[];
+};
+
+export type Call = {
+    type: 'Call';
+    callee: Expr;
+    paren: Token;
+    arguments: Expr[];
 };
 
 export type If = {
