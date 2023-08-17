@@ -1,14 +1,30 @@
-import { Assignment, Binary, Call, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
+import { Assignment, Binary, Call, Expr, ExprStatements, Function, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import RuntimeError from "./runtimeError";
 import { Token } from "./token";
 import TokenType from "./tokentype";
 import Lox from ".";
 import Environment from "./environment";
 import { LoxCallable } from "./loxCallable";
+import { LoxFunction } from "./loxFunction";
 
 export default class Interpreter {
 
-    private environment: Environment = new Environment();
+    globals: Environment = new Environment();
+
+    private environment: Environment = this.globals;
+
+    constructor() {
+        const loxCallable: LoxCallable = {
+            type: 'LoxCallable',
+            callable: true,
+            arity: () => 0,
+            call: (interpreter, args) => {
+                return Math.round(Date.now());
+            },
+        }
+        loxCallable['toString'] = () => "<native fn>";
+        this.globals.define("clock", loxCallable);
+    }
 
     evaluateLiteralExpr(expr: Literal) {
         return expr.value;
@@ -84,7 +100,7 @@ export default class Interpreter {
             args.push(this.evaluate(arg));
         }
 
-        if ('type' in callee && callee.type !== 'LoxCallable') {
+        if (!callee.hasOwnProperty('callable')) {
             throw new RuntimeError(expr.paren, "Can only call functions and classes.");
         }
 
@@ -113,6 +129,11 @@ export default class Interpreter {
 
     evaluateExpressionStatement(statement: ExprStatements): void {
         this.evaluate(statement.expr)
+    }
+
+    evaluateFunctionStataement(statement: Function): void {
+        const func = new LoxFunction(statement);
+        this.environment.define(statement.name.lexeme, func);
     }
 
     evaluatePrintStatement(statement: Print): void {
@@ -180,6 +201,9 @@ export default class Interpreter {
             case 'While':
                 this.evaluateWhileStatement(statement);
                 return;
+            case 'Function':
+                this.evaluateFunctionStataement(statement);
+                return;
             default:
                 throw new Error(`Attempted to evaluate unhandled statement. Statement - ${statement}`);
         }
@@ -194,7 +218,7 @@ export default class Interpreter {
         return null;
     }
 
-    private evaluateBlockStatement(statements: Statements[], environment: Environment) {
+    evaluateBlockStatement(statements: Statements[], environment: Environment) {
         const previous: Environment = this.environment;
         try {
             this.environment = environment;
@@ -222,8 +246,10 @@ export default class Interpreter {
                 return this.evaluateAssignExpression(expr);
             case "Logical":
                 return this.evaluateLogicalExpr(expr);
+            case "Call":
+                return this.evaluateCallExpr(expr); 
             default:
-                throw new Error('Attempted to evaluate unhandled expression.');
+                throw new Error(`Attempted to evaluate unhandled expression. - ${expr}`);
         }
     }
 

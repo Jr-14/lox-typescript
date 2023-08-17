@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Assignment, Binary, Block, Call, Expr, ExprStatements, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
+import { Assignment, Binary, Block, Call, Expr, ExprStatements, Grouping, If, Function, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -25,6 +25,9 @@ export default class Parser {
 
     private declaration(): Statements | null {
         try {
+            if (this.match(TokenType.FUN)) {
+                return this.func("function");
+            }
             if (this.match(TokenType.VAR)) {
                 return this.varDeclaration();
             }
@@ -152,6 +155,25 @@ export default class Parser {
         return { type: 'Expression Statements', expr} as ExprStatements;
     }
 
+    private func(kind: string): Function {
+        const name: Token = this.consume(TokenType.IDENTIFIER, `Expect ${kind} name.`);
+        this.consume(TokenType.LEFT_PAREN, `Expect '(' after ${kind} name.`);
+        const parameters: Token[] = [];
+        if (!this.check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (parameters.length >= 255) {
+                    this.error(this.peek(), "Can't have more than 255 parameters.");
+                }
+                parameters.push(this.consume(TokenType.IDENTIFIER, "Expect parameter name."));
+            } while (this.match(TokenType.COMMA));
+        }
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+        this.consume(TokenType.LEFT_BRACE, `Expect '{' before ${kind} body.`);
+        const body: Statements[] = this.block().filter(Boolean) as Statements[]; 
+        return { type: 'Function', name, params: parameters, body } as Function;
+    }
+
     private block(): (Statements | null)[] {
         const statements: (Statements | null)[] = [];
 
@@ -267,7 +289,7 @@ export default class Parser {
             return { type: 'Unary', operator, right } as Unary;
         }
 
-        return this.primary();
+        return this.call();
     }
 
     private finishCall(callee: Expr): Expr {

@@ -16,7 +16,8 @@ export type Statements =
     | ExprStatements
     | Print
     | VariableDeclaration
-    | While;
+    | While
+    | Function;
 
 
 export type Assignment = {
@@ -100,3 +101,10 @@ export type While = {
     condition: Expr;
     body: Statements;
 };
+
+export type Function = {
+    type: 'Function';
+    name: Token;
+    params: Token[];
+    body: Statements[];
+}

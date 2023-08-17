@@ -64,11 +64,11 @@ const run = (source: string) => {
     const parser: Parser = new Parser(tokens);
     const statements: (Statements | null)[] = parser.parse();
 
+    console.info(statements);
     if (hadError || !statements || !statements.length) {
         return;
     }
 
-    // console.info(statements);
     interpreter.interpret(statements as Statements[]);
 }
 
