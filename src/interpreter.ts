@@ -1,4 +1,4 @@
-import { Assignment, Binary, Call, Expr, ExprStatements, Function, Grouping, If, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
+import { Assignment, Binary, Call, Expr, ExprStatements, Function, Grouping, If, Literal, Logical, Print, Return, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import RuntimeError from "./runtimeError";
 import { Token } from "./token";
 import TokenType from "./tokentype";
@@ -6,6 +6,7 @@ import Lox from ".";
 import Environment from "./environment";
 import { LoxCallable } from "./loxCallable";
 import { LoxFunction } from "./loxFunction";
+import { ReturnException } from "./return";
 
 export default class Interpreter {
 
@@ -141,6 +142,14 @@ export default class Interpreter {
         console.info(this.stringify(value));
     }
 
+    evaluateReturnStatement(statement: Return): void {
+        let value = null;
+        if (statement.value !== null) {
+            value = this.evaluate(statement.value);
+        }
+        throw new ReturnException(value);
+    }
+
     evaluateVarStatement(statement: VariableDeclaration): null {
         let value: any = null;
         if (statement.initialiser != null) {
@@ -203,6 +212,9 @@ export default class Interpreter {
                 return;
             case 'Function':
                 this.evaluateFunctionStataement(statement);
+                return;
+            case 'Return':
+                this.evaluateReturnStatement(statement);
                 return;
             default:
                 throw new Error(`Attempted to evaluate unhandled statement. Statement - ${statement}`);

@@ -30,7 +30,7 @@ export const main = (args: string[]): void => {
         console.info('Usage: lox-typescript [script]');
         process.exit(9);
     } else if (args.length === 3) {
-        runFile(args[3]);
+        runFile(args[2]);
     } else {
         runPrompt();
     }

@@ -1,6 +1,6 @@
 import TokenType from "./tokentype";
 import { Token } from "./token";
-import { Assignment, Binary, Block, Call, Expr, ExprStatements, Grouping, If, Function, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
+import { Assignment, Binary, Block, Call, Expr, ExprStatements, Grouping, If, Function, Literal, Logical, Print, Statements, Unary, Variable, VariableDeclaration, While, Return } from "./ast";
 import Lox from ".";
 
 export default class Parser {
@@ -62,6 +62,10 @@ export default class Parser {
 
         if (this.match(TokenType.WHILE)) {
             return this.whileStatement();
+        }
+
+        if (this.match(TokenType.RETURN)) {
+            return this.returnStatement();
         }
 
         return this.expressionStatement();
@@ -128,6 +132,17 @@ export default class Parser {
         return { type: 'Print', expression: value } as Print;
     }
 
+    private returnStatement(): Statements {
+        const keyword = this.previousToken();
+        let value: Expr | null = null;
+        if (!this.check(TokenType.SEMICOLON)) {
+            value = this.expression();
+        }
+
+        this.consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+        return { type: 'Return', keyword, value } as Return;
+    }
+
     private varDeclaration(): Statements {
         const name: Token = this.consume(TokenType.IDENTIFIER, "Expect variable name.");
 
@@ -189,7 +204,7 @@ export default class Parser {
         let expr: Expr = this.or();
 
         if (this.match(TokenType.EQUAL)) {
-            const equals: Token = this.previous();
+            const equals: Token = this.previousToken();
             const value: Expr = this.assignment();
 
             // Use discriminating union to narrow types
@@ -209,7 +224,7 @@ export default class Parser {
         let expr: Expr = this.and();
 
         while (this.match(TokenType.OR)) {
-            const operator: Token = this.previous();
+            const operator: Token = this.previousToken();
             const right: Expr = this.and();
             expr = { type: 'Logical', left: expr, operator, right } as Logical;
         }
@@ -221,7 +236,7 @@ export default class Parser {
         let expr: Expr = this.equality();
 
         while (this.match(TokenType.AND)) {
-            const operator: Token = this.previous();
+            const operator: Token = this.previousToken();
             const right: Expr = this.equality();
             expr = { type: 'Logical', left: expr, operator, right } as Logical;
         }
@@ -233,7 +248,7 @@ export default class Parser {
         let expr: Expr = this.comparison();
 
         while(this.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
-            const operator: Token = this.previous();
+            const operator: Token = this.previousToken();
             const right: Expr = this.comparison();
             expr = { type: 'Binary', left: expr, operator, right } as Binary;
         }
@@ -250,7 +265,7 @@ export default class Parser {
             TokenType.LESS,
             TokenType.LESS_EQUAL)
         ) {
-            const operator: Token = this.previous();
+            const operator: Token = this.previousToken();
             const right: Expr = this.term();
             expr = { type: 'Binary', left: expr, operator, right } as Binary;
         }
@@ -262,7 +277,7 @@ export default class Parser {
         let expr: Expr = this.factor();
 
         while(this.match(TokenType.MINUS, TokenType.PLUS)) {
-            const operator: Token = this.previous();
+            const operator: Token = this.previousToken();
             const right: Expr = this.factor();
             expr = { type: 'Binary', left: expr, operator, right } as Binary;
         }
@@ -274,7 +289,7 @@ export default class Parser {
         let expr = this.unary();
 
         while (this.match(TokenType.SLASH, TokenType.STAR)) {
-            const operator: Token = this.previous();
+            const operator: Token = this.previousToken();
             const right: Expr = this.unary();
             expr = { type: 'Binary', left: expr, operator, right } as Binary;
         }
@@ -284,7 +299,7 @@ export default class Parser {
 
     private unary(): Expr {
         if (this.match(TokenType.BANG, TokenType.MINUS)) {
-            const operator: Token = this.previous();
+            const operator: Token = this.previousToken();
             const right: Expr = this.unary();
             return { type: 'Unary', operator, right } as Unary;
         }
@@ -333,7 +348,7 @@ export default class Parser {
         }
 
         if (this.match(TokenType.NUMBER, TokenType.STRING)) {
-            return { type: 'Literal', value: this.previous().literal } as Literal;
+            return { type: 'Literal', value: this.previousToken().literal } as Literal;
         }
 
         if (this.match(TokenType.LEFT_PAREN)) {
@@ -343,7 +358,7 @@ export default class Parser {
         }
 
         if (this.match(TokenType.IDENTIFIER)) {
-            return { type: 'Variable', name: this.previous()} as Variable;
+            return { type: 'Variable', name: this.previousToken()} as Variable;
         }
 
         return this.call();
@@ -378,7 +393,7 @@ export default class Parser {
         if (!this.isAtEnd()) {
             this.current++;
         }
-        return this.previous();
+        return this.previousToken();
     }
 
     private isAtEnd(): boolean {
@@ -389,7 +404,7 @@ export default class Parser {
         return this.tokens[this.current];
     }
 
-    private previous(): Token {
+    private previousToken(): Token {
         return this.tokens[this.current - 1];
     }
 
@@ -402,7 +417,7 @@ export default class Parser {
         this.advance();
         
         while(!this.isAtEnd()) {
-            if (this.previous().type == TokenType.SEMICOLON) {
+            if (this.previousToken().type == TokenType.SEMICOLON) {
                 return;
             }
 

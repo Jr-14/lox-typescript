@@ -17,8 +17,8 @@ export type Statements =
     | Print
     | VariableDeclaration
     | While
-    | Function;
-
+    | Function
+    | Return;
 
 export type Assignment = {
     type: 'Assignment';
@@ -107,4 +107,10 @@ export type Function = {
     name: Token;
     params: Token[];
     body: Statements[];
-}
+};
+
+export type Return = {
+    type: 'Return';
+    keyword: Token;
+    value: Expr;
+};
