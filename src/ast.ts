@@ -3,6 +3,7 @@ import { Token } from './token';
 export type Expr = 
     | Assignment
     | Binary 
+    | Call
     | Grouping 
     | Literal 
     | Unary
@@ -15,8 +16,9 @@ export type Statements =
     | ExprStatements
     | Print
     | VariableDeclaration
-    | While;
-
+    | While
+    | Function
+    | Return;
 
 export type Assignment = {
     type: 'Assignment';
@@ -27,6 +29,13 @@ export type Assignment = {
 export type Block = {
     type: 'Block';
     statements: Statements[];
+};
+
+export type Call = {
+    type: 'Call';
+    callee: Expr;
+    paren: Token;
+    arguments: Expr[];
 };
 
 export type If = {
@@ -91,4 +100,17 @@ export type While = {
     type: 'While';
     condition: Expr;
     body: Statements;
+};
+
+export type Function = {
+    type: 'Function';
+    name: Token;
+    params: Token[];
+    body: Statements[];
+};
+
+export type Return = {
+    type: 'Return';
+    keyword: Token;
+    value: Expr;
 };

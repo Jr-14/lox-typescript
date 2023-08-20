@@ -30,7 +30,7 @@ export const main = (args: string[]): void => {
         console.info('Usage: lox-typescript [script]');
         process.exit(9);
     } else if (args.length === 3) {
-        runFile(args[3]);
+        runFile(args[2]);
     } else {
         runPrompt();
     }
@@ -64,11 +64,11 @@ const run = (source: string) => {
     const parser: Parser = new Parser(tokens);
     const statements: (Statements | null)[] = parser.parse();
 
+    // console.info(statements);
     if (hadError || !statements || !statements.length) {
         return;
     }
 
-    // console.info(statements);
     interpreter.interpret(statements as Statements[]);
 }
 
