@@ -133,7 +133,7 @@ export default class Interpreter {
     }
 
     evaluateFunctionStataement(statement: Function): void {
-        const func = new LoxFunction(statement);
+        const func = new LoxFunction(statement, this.environment);
         this.environment.define(statement.name.lexeme, func);
     }
 

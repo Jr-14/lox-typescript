@@ -6,16 +6,18 @@ import { ReturnException } from "./return";
 
 export class LoxFunction implements LoxCallable {
     private declaration: Function;
+    private closure: Environment;
 
     type = 'LoxCallable' as const;
     callable = true as const;
 
-    constructor(declaration: Function) {
-        this.declaration = declaration
+    constructor(declaration: Function, closure: Environment) {
+        this.declaration = declaration;
+        this.closure = closure;
     }
 
     call(interpreter: Interpreter, args: any[]) {
-        const environment = new Environment(interpreter.globals);
+        const environment = new Environment(this.closure);
         for (let i = 0; i < this.declaration.params.length; i++) {
             environment.define(this.declaration.params[i].lexeme, args[i]);
         }

@@ -64,7 +64,7 @@ const run = (source: string) => {
     const parser: Parser = new Parser(tokens);
     const statements: (Statements | null)[] = parser.parse();
 
-    console.info(statements);
+    // console.info(statements);
     if (hadError || !statements || !statements.length) {
         return;
     }
