@@ -242,7 +242,7 @@ export default class Interpreter {
         }
     }
 
-    private evaluate(expr: Expr): any {
+    evaluate(expr: Expr): any {
         switch (expr.type) {
             case "Literal":
                 return this.evaluateLiteralExpr(expr);
