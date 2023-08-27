@@ -1,31 +1,59 @@
 import Lox from ".";
-import { Assignment, Block, Expr, Function, Statements, Variable, VariableDeclaration } from "./ast";
+import { Assignment, Binary, Block, Call, Expr, Function, Grouping, If, Literal, Logical, Print, Return, Statements, Unary, Variable, VariableDeclaration, While } from "./ast";
 import Interpreter from "./interpreter";
 import { Token } from "./token";
 
 type Scope = Map<string, boolean>;
 
+enum FunctionType {
+    NONE, FUNCTION
+}
+
 export default class Resolver {
     private interpreter: Interpreter;
+
     private scopes: Scope[] = []; // Stack
+
+    private currentFunction: FunctionType = FunctionType.NONE;
 
     constructor(interpreter: Interpreter) {
         this.interpreter = interpreter;
     }
 
-    evaluateBlockStatement(statement: Block): void {
+    resolveBlockStatement(statement: Block): void {
         this.beginScope();
         this.resolveStatements(statement.statements);
         this.endScope();
     }
 
-    evaluateFunctionStatement(statement: Function): void {
+    resolveFunctionStatement(statement: Function): void {
         this.declare(statement.name);
         this.define(statement.name);
-        this.resolveFunction(statement);
+        this.resolveFunction(statement, FunctionType.FUNCTION);
     }
 
-    evaluateVariableDeclaration(statement: VariableDeclaration): void {
+    resolveIfStatement(statement: If): void {
+        this.resolveExpression(statement.condition);
+        this.resolveStatement(statement.thenBranch);
+        if (statement.elseBranch != null) {
+            this.resolveStatement(statement.elseBranch);
+        }
+    }
+
+    resolvePrintStatement(statement: Print) {
+        this.resolveExpression(statement.expression);
+    }
+
+    resolveReturnStatement(statement: Return) {
+        if (this.currentFunction == FunctionType.NONE) {
+            Lox.tokenError(statement.keyword, "Can't return from top-level code.");
+        }
+        if (statement.value != null) {
+            this.resolveExpression(statement.value);
+        }
+    }
+
+    resolveVariableDeclaration(statement: VariableDeclaration): void {
         this.declare(statement.name);
         if (statement.initialiser != null) {
             this.resolveExpression(statement.initialiser)
@@ -33,12 +61,46 @@ export default class Resolver {
         this.define(statement.name);
     }
 
-    evaluateAssignmentExpr(expr: Assignment): void {
+    resolveWhileStatement(statement: While) {
+        this.resolveExpression(statement.condition);
+        this.resolveStatement(statement.body);
+    }
+
+    resolveAssignmentExpr(expr: Assignment): void {
         this.resolveExpression(expr.value);
         this.resolveLocal(expr, expr.name);
     }
 
-    evaluateVariableExpr(expr: Variable): void {
+    resolveBinaryExpr(expr: Binary) {
+        this.resolveExpression(expr.left);
+        this.resolveExpression(expr.right);
+    }
+
+    resolveCallExpr(expr: Call) {
+        this.resolveExpression(expr.callee);
+        for (const argument of expr.arguments) {
+            this.resolveExpression(argument);
+        }
+    }
+
+    resolveGroupingExpr(expr: Grouping) {
+        this.resolveExpression(expr.expression);
+    }
+
+    resolveLiteralExpr(expr: Literal) {
+        return null;
+    }
+
+    resolveLogicalExpr(expr: Logical) {
+        this.resolveExpression(expr.left);
+        this.resolveExpression(expr.right);
+    }
+
+    resolveUnaryExpr(expr: Unary) {
+        this.resolveExpression(expr.right);
+    }
+
+    resolveVariableExpr(expr: Variable): void {
         if (this.scopes.length !== 0 && this.scopes[this.scopes.length - 1].get(expr.name.lexeme) === false) {
             Lox.tokenError(expr.name, "Can't read local variable in its own initialiser.");
         }
@@ -54,28 +116,28 @@ export default class Resolver {
     private resolveStatement(statement: Statements) {
         switch (statement.type) {
             case "Block":
-                this.evaluateBlockStatement(statement);
+                this.resolveBlockStatement(statement);
                 break;
             case "If":
-                this.evaluateIfStatement(statement);
+                this.resolveIfStatement(statement);
                 break;
             case "Expression Statements":
-                this.evaluateExprStatement(statement);
+                this.resolveExpression(statement.expr);
                 break;
             case "Print":
-                this.evaluatePrintStatement(statement);
+                this.resolvePrintStatement(statement);
                 break;
             case "Variable Declaration":
-                this.evaluateVariableDeclaration(statement);
+                this.resolveVariableDeclaration(statement);
                 break;
             case "While":
-                this.evaluateWhileStatement(statement);
+                this.resolveWhileStatement(statement);
                 break;
             case "Function":
-                this.evaluateFunctionStatement(statement);
+                this.resolveFunctionStatement(statement);
                 break;
             case "Return":
-                this.evaluateReturnStatement(statement);
+                this.resolveReturnStatement(statement);
                 break;
             default:
                 throw new Error(`Failed to resolve statement - ${statement}`);
@@ -85,28 +147,28 @@ export default class Resolver {
     private resolveExpression(expr: Expr) {
         switch (expr.type) {
             case "Assignment":
-                this.evaluateAssignmentExpr(expr);
+                this.resolveAssignmentExpr(expr);
                 break;
             case "Binary":
-                this.evaluateBinaryExpr(expr);
+                this.resolveBinaryExpr(expr);
                 break;
             case "Call":
-                this.evaluateCallExpr(expr);
+                this.resolveCallExpr(expr);
                 break;
             case "Grouping":
-                this.evaluateGroupingExpr(expr);
+                this.resolveGroupingExpr(expr);
                 break;
             case "Literal":
-                this.evaluateLiteralExpr(expr);
+                this.resolveLiteralExpr(expr);
                 break;
             case "Unary":
-                this.evaluateUnaryExpr(expr);
+                this.resolveUnaryExpr(expr);
                 break;
             case "Variable":
-                this.evaluateVariableExpr(expr);
+                this.resolveVariableExpr(expr);
                 break;
             case "Logical":
-                this.evaluateLogicalExpr(expr);
+                this.resolveLogicalExpr(expr);
                 break;
             default:
                 throw new Error(`Failed to resolve expr - ${expr}`);
@@ -126,7 +188,11 @@ export default class Resolver {
         if (this.scopes.length === 0) {
             return;
         }
-        this.scopes[this.scopes.length - 1].set(name.lexeme, false);
+        const scope = this.scopes[this.scopes.length - 1];
+        if (scope.has(name.lexeme)) {
+            Lox.tokenError(name, "Already a variable with this name in this scope.");
+        }
+        scope.set(name.lexeme, false);
     }
 
     private define(name: Token): void {
@@ -145,7 +211,9 @@ export default class Resolver {
         }
     }
 
-    private resolveFunction(func: Function): void {
+    private resolveFunction(func: Function, type: FunctionType): void {
+        const enclosingFunction = this.currentFunction;
+        this.currentFunction = type;
         this.beginScope();
         for (const param of func.params) {
             this.declare(param);
@@ -153,5 +221,6 @@ export default class Resolver {
         }
         this.resolveStatements(func.body);
         this.endScope();
+        this.currentFunction = enclosingFunction;
     }
 }
