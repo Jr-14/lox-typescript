@@ -21,6 +21,24 @@ export default class Environment {
         this.values.set(name, value);
     }
 
+    ancestor(distance: number): Environment {
+        let environment: Environment | null  = this;
+        for (let i = 0; i < distance; i++) {
+            if (environment != null) {
+                environment = environment.enclosing;
+            }
+        }
+        return environment as Environment;
+    }
+
+    getAt(distance: number, name: string): any {
+        return this.ancestor(distance).values.get(name);
+    }
+
+    assignAt(distance: number, name: Token, value: any): void {
+        this.ancestor(distance).values.set(name.lexeme, value);
+    }
+
     /**
      * Get a global variable value by name.
      * 
