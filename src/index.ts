@@ -7,6 +7,7 @@ import Parser from './parser';
 import RuntimeError from './runtimeError';
 import Interpreter from './interpreter';
 import { Expr, Statements } from './ast';
+import Resolver from './resolver';
 
 // Track if there has been any errors
 let hadError: boolean = false;
@@ -62,13 +63,19 @@ const run = (source: string) => {
     const scanner: Scanner = new Scanner(source);
     const tokens: Token[] = scanner.scanTokens();
     const parser: Parser = new Parser(tokens);
-    const statements: (Statements | null)[] = parser.parse();
+
+    const statements = (parser.parse()).filter(Boolean) as Statements[];
 
     // console.info(statements);
     if (hadError || !statements || !statements.length) {
         return;
     }
 
+    const resolver = new Resolver(interpreter);
+    resolver.resolveStatements(statements);
+    if (hadError) {
+        return;
+    }
     interpreter.interpret(statements as Statements[]);
 }
 

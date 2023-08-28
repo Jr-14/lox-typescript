@@ -14,6 +14,8 @@ export default class Interpreter {
 
     private environment: Environment = this.globals;
 
+    private locals: Map<Expr, number> = new Map();
+
     constructor() {
         const loxCallable: LoxCallable = {
             type: 'LoxCallable',
@@ -168,12 +170,26 @@ export default class Interpreter {
 
     evaluateAssignExpression(expr: Assignment): any {
         const value: any = this.evaluate(expr.value);
-        this.environment.assign(expr.name, value);
+        const distance = this.locals.get(expr);
+        if (distance != null) {
+            this.environment.assignAt(distance, expr.name, value);
+        } else {
+            this.globals.assign(expr.name, value);
+        }
         return value;
     }
 
     evaluteVarExpression(expr: Variable): any {
-        return this.environment.get(expr.name);
+        return this.lookUpVariable(expr.name, expr);
+    }
+
+    private lookUpVariable(name: Token, expr: Expr) {
+        const distance = this.locals.get(expr);
+        if (distance != null ) {
+            return this.environment.getAt(distance, name.lexeme);
+        } else {
+            return this.globals.get(name);
+        }
     }
 
     interpret(statements: Statements[]): void {
@@ -242,7 +258,7 @@ export default class Interpreter {
         }
     }
 
-    private evaluate(expr: Expr): any {
+    evaluate(expr: Expr): any {
         switch (expr.type) {
             case "Literal":
                 return this.evaluateLiteralExpr(expr);
@@ -263,6 +279,10 @@ export default class Interpreter {
             default:
                 throw new Error(`Attempted to evaluate unhandled expression. - ${expr}`);
         }
+    }
+
+    resolve(expr: Expr, depth: number): void {
+        this.locals.set(expr, depth);
     }
 
     private isTruthy(object: any): boolean {
